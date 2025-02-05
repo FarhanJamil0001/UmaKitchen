@@ -1,69 +1,177 @@
-import { ArrowRight, Github } from 'lucide-react';
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BorderBeam } from "../magicui/border-beam";
 import { Button } from "../ui/button";
-import Image from 'next/image';
-import { TITLE_TAILWIND_CLASS } from '@/utils/constants';
+
+type OrderingWindow = {
+  id: string;
+  orderingStart: string; // Coming as string from JSON
+  orderingEnd: string;
+  pickupDate: string;
+  pickupTimes: string[];
+};
 
 export default function HeroSection() {
-    return (
-        <section className='flex flex-col items-center justify-center leading-6 mt-[3rem]' aria-label="Nextjs Starter Kit Hero">
-            <h1 className={`${TITLE_TAILWIND_CLASS} scroll-m-20 font-semibold tracking-tight text-center max-w-[1120px] bg-gradient-to-b dark:text-white`}>
-                Nextjs Starter Kit: Build & Ship Fast
-            </h1>
-            <p className="mx-auto max-w-[700px] text-gray-500 text-center mt-2 dark:text-gray-400">
-                The Ultimate Nextjs 14 Starter Kit for quickly building your SaaS, giving you time to focus on what really matters
-            </p>
-            <div className="flex justify-center items-center gap-3">
-                <Link href="/dashboard" className="mt-5">
-                    <Button className="animate-buttonheartbeat rounded-md bg-blue-600 hover:bg-blue-500 text-sm font-semibold text-white">
-                        Get Started
-                    </Button>
-                </Link>
+  const [windows, setWindows] = useState<OrderingWindow[]>([]);
+  const [isOrderingOpen, setIsOrderingOpen] = useState(false);
+  const [countdownText, setCountdownText] = useState("Loading...");
 
-                <Link
-                    href="https://discord.gg/HUcHdrrDgY"
-                    target='_blank'
-                    className="mt-5"
-                    aria-label="Join Discord (opens in a new tab)"
-                >
-                    <Button variant="outline" className="flex gap-1">
-                        Join Discord
-                        <ArrowRight className='w-4 h-4' aria-hidden="true" />
-                    </Button>
-                </Link>
-                <Link
-                    href="https://github.com/michaelshimeles/nextjs14-starter-template"
-                    target='_blank'
-                    className='animate-buttonheartbeat border p-2 rounded-full mt-5 hover:dark:bg-black hover:cursor-pointer'
-                    aria-label="View NextJS 14 Starter Template on GitHub"
-                >
-                    <Github className='w-5 h-5' aria-hidden="true" />
-                </Link>
+  // Fetch windows on mount
+  useEffect(() => {
+    async function fetchWindows() {
+      try {
+        const response = await fetch("/api/ordering-windows");
+        const json = await response.json();
+        if (json.success) {
+          setWindows(json.data);
+        } else {
+          console.error("Failed to load windows:", json.error);
+          setCountdownText("No windows found");
+        }
+      } catch (err) {
+        console.error(err);
+        setCountdownText("Error fetching windows");
+      }
+    }
+    fetchWindows();
+  }, []);
+
+  function checkOrderingStatus() {
+    const now = new Date();
+
+    // Convert string => Date for each window
+    const parsedWindows = windows.map((w) => ({
+      ...w,
+      orderingStart: new Date(w.orderingStart),
+      orderingEnd: new Date(w.orderingEnd),
+    }));
+
+    // 1) Check if we're currently in an open window
+    for (const slot of parsedWindows) {
+      if (now >= slot.orderingStart && now < slot.orderingEnd) {
+        // we're in an open slot
+        const diff = slot.orderingEnd.getTime() - now.getTime();
+        return {
+          isOpen: true,
+          countdown: `Ordering closes in ${formatTimeDiff(diff)}`,
+        };
+      }
+    }
+
+    // 2) If not open, find the next upcoming
+    const futureSlots = parsedWindows.filter((slot) => slot.orderingStart > now);
+    if (futureSlots.length > 0) {
+      futureSlots.sort((a, b) => a.orderingStart.getTime() - b.orderingStart.getTime());
+      const nextSlot = futureSlots[0];
+      const diff = nextSlot.orderingStart.getTime() - now.getTime();
+      return {
+        isOpen: false,
+        countdown: `Ordering opens in ${formatTimeDiff(diff)}`,
+      };
+    }
+
+    // 3) No current or future windows
+    return {
+      isOpen: false,
+      countdown: "No upcoming windows",
+    };
+  }
+
+  function formatTimeDiff(ms: number) {
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((ms % (1000 * 60)) / 1000);
+    return `${hours}h ${minutes}m ${seconds}s`;
+  }
+
+  useEffect(() => {
+    if (windows.length === 0) return;
+    const interval = setInterval(() => {
+      const { isOpen, countdown } = checkOrderingStatus();
+      setIsOrderingOpen(isOpen);
+      setCountdownText(countdown);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [windows]);
+
+  return (
+    <div className="w-full max-w-4xl mx-auto px-4">
+      <div className="backdrop-blur-lg bg-white/10 dark:bg-black/10 rounded-2xl border border-white/20 shadow-xl p-8 md:p-12">
+        <div className="flex flex-col items-center justify-center text-center space-y-8">
+          {/* Logo/Icon */}
+          <div className="w-20 h-20 rounded-full bg-white/20 dark:bg-white/10 flex items-center justify-center">
+            <span className="text-3xl">🏡</span>
+          </div>
+          
+          {/* Title & Description */}
+          <div className="space-y-4">
+            <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
+              UMA Kitchen
+            </h1>
+            <p className="text-lg md:text-xl text-white/80 max-w-2xl">
+              Homemade meals from our kitchen to yours
+            </p>
+          </div>
+
+          {/* Order Button & Status */}
+          <div className="space-y-4">
+            {isOrderingOpen ? (
+              <Link href="/order">
+                <Button className="bg-white text-black hover:bg-white/90 dark:bg-white dark:text-black dark:hover:bg-white/90 text-lg px-8 py-6 rounded-xl transition-all duration-300 transform hover:scale-105">
+                  Order for Pickup
+                </Button>
+              </Link>
+            ) : (
+              <Button 
+                disabled 
+                className="bg-white/50 text-white/70 cursor-not-allowed text-lg px-8 py-6 rounded-xl"
+              >
+                Order for Pickup
+              </Button>
+            )}
+            
+            {/* Countdown Display */}
+            <div className="flex flex-col items-center space-y-2">
+              <p className="text-white/60 text-sm uppercase tracking-wider">Next Ordering Window</p>
+              <p className="text-white font-mono text-xl bg-white/10 px-4 py-2 rounded-lg">
+                {countdownText}
+              </p>
             </div>
-            <div>
-                <div className="relative flex max-w-6xl justify-center overflow-hidden mt-7">
-                    <div className="relative rounded-xl">
-                        <Image
-                            src="https://utfs.io/f/31dba2ff-6c3b-4927-99cd-b928eaa54d5f-5w20ij.png"
-                            alt="Nextjs Starter Kit Dashboard Preview"
-                            width={1100}
-                            height={550}
-                            priority={true}
-                            className="block rounded-[inherit] border object-contain shadow-lg dark:hidden"
-                        />
-                        <Image
-                            src="https://utfs.io/f/69a12ab1-4d57-4913-90f9-38c6aca6c373-1txg2.png"
-                            width={1100}
-                            height={550}
-                            alt="Nextjs Starter Kit Dark Mode Dashboard Preview"
-                            priority={true}
-                            className="dark:block rounded-[inherit] border object-contain shadow-lg hidden"
-                        />
-                        <BorderBeam size={250} duration={12} delay={9} />
-                    </div>
-                </div>
-            </div>
-        </section>
-    )
+          </div>
+
+          {/* Features or Benefits */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mt-8">
+            {[
+              { 
+                icon: "🕒", 
+                title: "Fresh Daily", 
+                desc: "Made fresh for scheduled pickups" 
+              },
+              { 
+                icon: "🏡", 
+                title: "Local Pickup", 
+                desc: "Conveniently located in your neighborhood" 
+              },
+              { 
+                icon: "👨‍🍳", 
+                title: "Home Kitchen", 
+                desc: "Authentic homestyle cooking" 
+              },
+            ].map((feature) => (
+              <div 
+                key={feature.title}
+                className="backdrop-blur-sm bg-white/5 rounded-xl p-4 text-center border border-white/10 transition-all duration-300 hover:bg-white/10"
+              >
+                <span className="text-2xl mb-2 block">{feature.icon}</span>
+                <h3 className="font-semibold text-white mb-1">{feature.title}</h3>
+                <p className="text-white/70 text-sm">{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

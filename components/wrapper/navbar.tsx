@@ -21,7 +21,7 @@ const components: { title: string; href: string; description: string }[] = [
     },
 ];
 
-export default function NavBar() {
+export default function Navbar() {
     let userId = null;
     /* eslint-disable react-hooks/rules-of-hooks */
     if (config?.auth?.enabled) {
@@ -30,76 +30,25 @@ export default function NavBar() {
     }
 
     return (
-        <div className="flex min-w-full fixed justify-between p-2 border-b z-10 dark:bg-black dark:bg-opacity-50 bg-white">
-            <div className="flex justify-between w-full min-[825px]:hidden">
-                <Dialog>
-                    <SheetTrigger className="p-2 transition">
-                        <Button size="icon" variant="ghost" className="w-4 h-4" aria-label="Open menu" asChild>
-                            <GiHamburgerMenu />
-                        </Button>
-                    </SheetTrigger>
-                    <SheetContent side="left">
-                        <SheetHeader>
-                            <SheetTitle>Next Starter</SheetTitle>
-                        </SheetHeader>
-                        <div className="flex flex-col space-y-3 mt-[1rem]">
-                            <DialogClose asChild>
-                                <Link href="/">
-                                    <Button variant="outline" className="w-full">Home</Button>
-                                </Link>
-                            </DialogClose>
-                            <DialogClose asChild>
-                                <Link href="/dashboard" legacyBehavior passHref className="cursor-pointer">
-                                    <Button variant="outline">
-                                        Dashboard
-                                    </Button>
-                                </Link>
-                            </DialogClose>
-                        </div>
-                    </SheetContent>
-                </Dialog>
-                <ModeToggle />
-            </div>
-            <NavigationMenu>
-                <NavigationMenuList className="max-[825px]:hidden flex gap-3 w-[100%] justify-between">
-                    <Link href="/" className="pl-2 flex items-center" aria-label="Home">
-                        <BlocksIcon aria-hidden="true" />
-                        <span className="sr-only">Home</span>
+        <header className="fixed top-0 left-0 right-0 z-50 bg-gray-900/90 backdrop-blur-lg border-b border-gray-800">
+            <div className="container mx-auto px-4">
+                <div className="flex h-16 items-center justify-between">
+                    <Link href="/" className="text-white font-bold text-xl">
+                        UMA Kitchen
                     </Link>
-                </NavigationMenuList>
-                <NavigationMenuList>
-                    <NavigationMenuItem className="max-[825px]:hidden ml-5">
-                        <NavigationMenuTrigger className="dark:bg-black dark:bg-opacity-50">
-                            Features
-                        </NavigationMenuTrigger>
-                        <NavigationMenuContent>
-                            <ul className="flex flex-col w-[400px] gap-3 p-4 lg:w-[500px]">
-                                {components.map((component, index) => (
-                                    <ListItem
-                                        key={index}
-                                        title={component.title}
-                                        href={component.href}
-                                    >
-                                        {component.description}
-                                    </ListItem>
-                                ))}
-                            </ul>
-                        </NavigationMenuContent>
-                    </NavigationMenuItem>
-                    <NavigationMenuItem className="max-[825px]:hidden">
-                        <Link href="/dashboard" legacyBehavior passHref>
-                            <Button variant="ghost">
-                                Dashboard
-                            </Button>
+
+                    <nav className="flex items-center gap-4">
+                        <Link 
+                            href="/order" 
+                            className="text-gray-200 hover:text-white transition-colors"
+                        >
+                            Order Now
                         </Link>
-                    </NavigationMenuItem>
-                </NavigationMenuList>
-            </NavigationMenu>
-            <div className="flex items-center gap-2 max-[825px]:hidden">
-                {userId && <UserProfile />}
-                <ModeToggle />
+                        {/* Add any other navigation links you need */}
+                    </nav>
+                </div>
             </div>
-        </div>
+        </header>
     );
 }
 

@@ -85,3 +85,29 @@ Refer to the documentation of the individual technologies used in this project f
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [Clerk Documentation](https://clerk.dev/docs) (if using auth)
 - [Stripe Documentation](https://stripe.com/docs) (if using payments)
+
+## Deployment
+
+1. Fork and clone the repository
+2. Create a new project on Vercel
+3. Connect your GitHub repository to Vercel
+4. Set up environment variables in Vercel:
+   - Copy all variables from your `.env` file to Vercel's environment variables section
+   - Ensure all required environment variables are set
+5. Deploy!
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and fill in your values:
+
+\```bash
+cp .env.example .env
+\```
+
+Required environment variables:
+- `SUPABASE_URL`: Your Supabase project URL
+- `SUPABASE_SERVICE_KEY`: Your Supabase service key
+- `DATABASE_URL`: PostgreSQL connection string
+- `DIRECT_URL`: Direct database connection URL
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: Clerk public key
+- `CLERK_SECRET_KEY`: Clerk secret key
